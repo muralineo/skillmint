@@ -2,8 +2,10 @@ import { Routes, Route } from 'react-router-dom';
 import { Box } from '@mui/material';
 import { NavBar } from './components/NavBar';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { ProtectedAdminRoute } from './components/ProtectedAdminRoute';
 import { HomePage } from './pages/HomePage';
 import { CourseDetail } from './pages/CourseDetail';
+import { AdminPage } from './pages/AdminPage';
 
 function App() {
   return (
@@ -17,6 +19,14 @@ function App() {
             <ProtectedRoute>
               <CourseDetail />
             </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedAdminRoute>
+              <AdminPage />
+            </ProtectedAdminRoute>
           }
         />
       </Routes>

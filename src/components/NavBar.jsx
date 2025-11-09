@@ -1,11 +1,15 @@
+import { useEffect, useState } from 'react';
 import { AppBar, Toolbar, Typography, Button, Box, Avatar } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { AdminPanelSettings } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
+import { checkIsAdmin } from '../lib/courseAccess';
 
 export const NavBar = () => {
   const { user, signInWithGoogle, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const handleSignIn = () => {
     const currentPath = location.pathname + location.search + location.hash;
@@ -15,6 +19,18 @@ export const NavBar = () => {
   const handleSignOut = async () => {
     await signOut();
   };
+
+  useEffect(() => {
+    const verifyAdmin = async () => {
+      if (user) {
+        const adminStatus = await checkIsAdmin(user.id);
+        setIsAdmin(adminStatus);
+      } else {
+        setIsAdmin(false);
+      }
+    };
+    verifyAdmin();
+  }, [user]);
 
   return (
     <AppBar position="static" sx={{ bgcolor: '#2e7d32' }}>
@@ -31,6 +47,16 @@ export const NavBar = () => {
         <Box display="flex" alignItems="center" gap={2}>
           {user ? (
             <>
+              {isAdmin && (
+                <Button
+                  color="inherit"
+                  variant="outlined"
+                  startIcon={<AdminPanelSettings />}
+                  onClick={() => navigate('/admin')}
+                >
+                  Admin
+                </Button>
+              )}
               <Box display="flex" alignItems="center" gap={1}>
                 <Avatar
                   sx={{ width: 32, height: 32, bgcolor: '#1b5e20' }}
