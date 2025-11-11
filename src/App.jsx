@@ -6,6 +6,7 @@ import { ProtectedAdminRoute } from './components/ProtectedAdminRoute';
 import { HomePage } from './pages/HomePage';
 import { CourseDetail } from './pages/CourseDetail';
 import { AdminPage } from './pages/AdminPage';
+import { AdminCourseContent } from './pages/admin/AdminCourseContent';
 
 function App() {
   return (
@@ -26,6 +27,14 @@ function App() {
           element={
             <ProtectedAdminRoute>
               <AdminPage />
+            </ProtectedAdminRoute>
+          }
+        />
+        <Route
+          path="/admin/courses/:courseId/content"
+          element={
+            <ProtectedAdminRoute>
+              <AdminCourseContent />
             </ProtectedAdminRoute>
           }
         />

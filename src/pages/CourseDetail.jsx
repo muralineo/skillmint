@@ -9,12 +9,16 @@ import {
   Button,
   Card,
   CardMedia,
-  Paper
+  Paper,
+  Link as MuiLink
 } from '@mui/material';
-import { ArrowBack, Lock, HourglassEmpty, CheckCircle } from '@mui/icons-material';
+import { ArrowBack, Lock, HourglassEmpty, CheckCircle, PlayCircleOutline } from '@mui/icons-material';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
 import { checkCourseAccess, requestCourseAccess } from '../lib/courseAccess';
+import { fetchCourseSessions, fetchSessionCodeFiles } from '../lib/courseContent';
+import { CourseContentSidebar } from '../components/CourseContentSidebar';
+import { MonacoEditorViewer } from '../components/MonacoEditorViewer';
 
 export const CourseDetail = () => {
   const { id } = useParams();
@@ -27,11 +31,31 @@ export const CourseDetail = () => {
   const [requesting, setRequesting] = useState(false);
   const [requestSuccess, setRequestSuccess] = useState(false);
 
+  // Course content state
+  const [sessions, setSessions] = useState([]);
+  const [filesBySession, setFilesBySession] = useState({});
+  const [loadingSessions, setLoadingSessions] = useState(false);
+  const [errorSessions, setErrorSessions] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  
+  // Content selection state
+  const [selectedSessionId, setSelectedSessionId] = useState(null);
+  const [selectedView, setSelectedView] = useState(null); // 'video' | 'code' | null
+  const [openFiles, setOpenFiles] = useState([]);
+  const [activeFileId, setActiveFileId] = useState(null);
+
   useEffect(() => {
     if (id && user) {
       fetchCourseAndAccess();
     }
   }, [id, user]);
+
+  // Load course content when user has access
+  useEffect(() => {
+    if (accessStatus?.hasAccess && course?.id) {
+      loadCourseContent();
+    }
+  }, [accessStatus?.hasAccess, course?.id]);
 
   const fetchCourseAndAccess = async () => {
     try {
@@ -58,6 +82,40 @@ export const CourseDetail = () => {
     }
   };
 
+  const loadCourseContent = async () => {
+    try {
+      setLoadingSessions(true);
+      setErrorSessions(null);
+
+      console.group('🔍 Loading Course Content');
+      console.log('Course ID:', course.id);
+      console.log('User ID:', user?.id);
+      console.log('Access Status:', accessStatus);
+
+      // Fetch all sessions for this course
+      const sessionsData = await fetchCourseSessions(course.id);
+      console.log('✅ Sessions fetched:', sessionsData.length, sessionsData);
+      setSessions(sessionsData);
+
+      // Fetch code files for each session
+      const filesMap = {};
+      for (const session of sessionsData) {
+        const files = await fetchSessionCodeFiles(session.id);
+        filesMap[session.id] = files;
+        console.log(`📁 Files for session ${session.session_number}:`, files.length, files);
+      }
+      setFilesBySession(filesMap);
+      console.log('✅ All files loaded:', filesMap);
+      console.groupEnd();
+    } catch (err) {
+      console.error('❌ Error loading course content:', err);
+      console.groupEnd();
+      setErrorSessions(err.message || 'Failed to load course content');
+    } finally {
+      setLoadingSessions(false);
+    }
+  };
+
   const handleRequestAccess = async () => {
     setRequesting(true);
     const result = await requestCourseAccess(user.id, id);
@@ -68,6 +126,40 @@ export const CourseDetail = () => {
       setAccessStatus({ hasAccess: false, status: 'pending', hasRequested: true });
     } else {
       setError(result.error);
+    }
+  };
+
+  const handleSelectVideo = (session) => {
+    setSelectedSessionId(session.id);
+    setSelectedView('video');
+  };
+
+  const handleSelectFile = (file, session) => {
+    setSelectedSessionId(session.id);
+    setSelectedView('code');
+    
+    // Add file to openFiles if not already present
+    if (!openFiles.find(f => f.id === file.id)) {
+      setOpenFiles(prev => [...prev, file]);
+    }
+    setActiveFileId(file.id);
+  };
+
+  const handleChangeFileContent = (fileId, newContent) => {
+    setOpenFiles(prev => prev.map(f => 
+      f.id === fileId ? { ...f, file_content: newContent } : f
+    ));
+  };
+
+  const handleActivateFile = (fileId) => {
+    setActiveFileId(fileId);
+  };
+
+  const handleCloseFile = (fileId) => {
+    setOpenFiles(prev => prev.filter(f => f.id !== fileId));
+    if (activeFileId === fileId) {
+      const remaining = openFiles.filter(f => f.id !== fileId);
+      setActiveFileId(remaining.length > 0 ? remaining[0].id : null);
     }
   };
 
@@ -208,6 +300,7 @@ export const CourseDetail = () => {
           )}
 
           {/* Course Content - Only visible with access */}
+          {/* Replaced placeholder with actual course content sidebar and viewer */}
           {accessStatus?.hasAccess && (
             <Box sx={{ mt: 4 }}>
               <Alert severity="success" sx={{ mb: 3 }}>
@@ -216,15 +309,106 @@ export const CourseDetail = () => {
                   <Typography>You have access to this course!</Typography>
                 </Box>
               </Alert>
-              <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
-                Course Content
-              </Typography>
-              <Typography variant="body1" paragraph>
-                Welcome to {course.title}! Here you'll find all the course materials and lessons.
-              </Typography>
-              <Typography variant="body1" color="text.secondary">
-                Course materials and lessons will be available here.
-              </Typography>
+              
+              {errorSessions && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  Error loading content: {errorSessions}
+                </Alert>
+              )}
+
+              {/* Course Content Layout with Sidebar and Main Area */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: 0,
+                  height: '70vh',
+                  minHeight: 500,
+                  border: 1,
+                  borderColor: 'divider',
+                  borderRadius: 1,
+                  overflow: 'hidden',
+                  bgcolor: 'background.default'
+                }}
+              >
+                {/* Sidebar */}
+                <CourseContentSidebar
+                  open={sidebarOpen}
+                  onToggle={() => setSidebarOpen(prev => !prev)}
+                  sessions={sessions}
+                  filesBySession={filesBySession}
+                  onSelectVideo={handleSelectVideo}
+                  onSelectFile={handleSelectFile}
+                  loading={loadingSessions}
+                />
+
+                {/* Main Content Area */}
+                <Box
+                  sx={{
+                    flexGrow: 1,
+                    overflow: 'auto',
+                    bgcolor: 'background.paper',
+                    display: 'flex',
+                    flexDirection: 'column'
+                  }}
+                >
+                  {loadingSessions ? (
+                    <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+                      <CircularProgress />
+                    </Box>
+                  ) : selectedView === 'video' ? (
+                    // Video View
+                    <Box p={4} display="flex" flexDirection="column" alignItems="center" justifyContent="center" height="100%">
+                      {sessions.find(s => s.id === selectedSessionId)?.video_url ? (
+                        <>
+                          <PlayCircleOutline sx={{ fontSize: 80, color: 'success.main', mb: 3 }} />
+                          <Typography variant="h5" gutterBottom fontWeight="bold">
+                            {sessions.find(s => s.id === selectedSessionId)?.topic}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" mb={3}>
+                            Day {sessions.find(s => s.id === selectedSessionId)?.session_number}
+                          </Typography>
+                          <Button
+                            variant="contained"
+                            size="large"
+                            color="success"
+                            startIcon={<PlayCircleOutline />}
+                            component={MuiLink}
+                            href={sessions.find(s => s.id === selectedSessionId)?.video_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            sx={{ textTransform: 'none' }}
+                          >
+                            Watch Recording
+                          </Button>
+                        </>
+                      ) : (
+                        <Typography variant="body1" color="text.secondary">
+                          No video URL available for this session.
+                        </Typography>
+                      )}
+                    </Box>
+                  ) : selectedView === 'code' ? (
+                    // Monaco Editor View
+                    <MonacoEditorViewer
+                      openFiles={openFiles}
+                      activeFileId={activeFileId}
+                      onChangeContent={handleChangeFileContent}
+                      onActivate={handleActivateFile}
+                      onClose={handleCloseFile}
+                    />
+                  ) : (
+                    // Welcome / Empty State
+                    <Box p={4} display="flex" flexDirection="column" alignItems="center" justifyContent="center" height="100%">
+                      <Typography variant="h6" gutterBottom color="text.secondary">
+                        Welcome to {course.title}!
+                      </Typography>
+                      <Typography variant="body1" color="text.secondary" textAlign="center">
+                        Select a video lecture or code file from the sidebar to get started.
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+              </Box>
             </Box>
           )}
         </Box>

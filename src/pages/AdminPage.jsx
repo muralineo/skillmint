@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Container,
   Typography,
@@ -19,10 +20,11 @@ import {
   Card,
   CardContent
 } from '@mui/material';
-import { CheckCircle, Cancel, HourglassEmpty, PersonAdd } from '@mui/icons-material';
+import { CheckCircle, Cancel, HourglassEmpty, PersonAdd, LibraryBooks } from '@mui/icons-material';
 import { getPendingRequests, approveCourseAccess, rejectCourseAccess } from '../lib/courseAccess';
 
 export const AdminPage = () => {
+  const navigate = useNavigate();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -290,9 +292,19 @@ export const AdminPage = () => {
                       </Box>
                     )}
                     {request.status !== 'pending' && (
-                      <Typography variant="body2" color="text.secondary">
-                        {request.status === 'approved' ? 'Already approved' : 'Already rejected'}
-                      </Typography>
+                      <Box display="flex" gap={1} justifyContent="flex-end">
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          startIcon={<LibraryBooks />}
+                          onClick={() => navigate(`/admin/courses/${request.course_id}/content`)}
+                        >
+                          Manage Content
+                        </Button>
+                        <Typography variant="body2" color="text.secondary">
+                          {request.status === 'approved' ? 'Approved' : 'Rejected'}
+                        </Typography>
+                      </Box>
                     )}
                   </TableCell>
                 </TableRow>
