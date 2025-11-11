@@ -1,6 +1,16 @@
 import { useState } from 'react';
-import { Box, IconButton, Typography, CircularProgress } from '@mui/material';
-import { TreeView, TreeItem } from '@mui/lab';
+import { 
+  Box, 
+  IconButton, 
+  Typography, 
+  CircularProgress,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Collapse
+} from '@mui/material';
 import {
   ExpandMore,
   ChevronRight,
@@ -8,7 +18,9 @@ import {
   Code as CodeIcon,
   MenuOpen,
   Menu as MenuIcon,
-  InsertDriveFile
+  InsertDriveFile,
+  Folder,
+  FolderOpen
 } from '@mui/icons-material';
 
 export const CourseContentSidebar = ({
@@ -20,10 +32,21 @@ export const CourseContentSidebar = ({
   onSelectFile,
   loading = false
 }) => {
-  const [expanded, setExpanded] = useState([]);
+  const [expandedSessions, setExpandedSessions] = useState({});
+  const [expandedCodeGroups, setExpandedCodeGroups] = useState({});
 
-  const handleToggle = (event, nodeIds) => {
-    setExpanded(nodeIds);
+  const handleSessionToggle = (sessionId) => {
+    setExpandedSessions(prev => ({
+      ...prev,
+      [sessionId]: !prev[sessionId]
+    }));
+  };
+
+  const handleCodeGroupToggle = (sessionId) => {
+    setExpandedCodeGroups(prev => ({
+      ...prev,
+      [sessionId]: !prev[sessionId]
+    }));
   };
 
   const handleVideoClick = (session) => {
@@ -71,8 +94,8 @@ export const CourseContentSidebar = ({
         </IconButton>
       </Box>
 
-      {/* Tree View Content */}
-      <Box sx={{ flexGrow: 1, overflow: 'auto', p: open ? 1 : 0.5 }}>
+      {/* Content List */}
+      <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
         {loading ? (
           <Box display="flex" justifyContent="center" alignItems="center" py={4}>
             <CircularProgress size={30} />
@@ -84,108 +107,120 @@ export const CourseContentSidebar = ({
             </Typography>
           )
         ) : (
-          <TreeView
-            aria-label="course contents navigator"
-            defaultCollapseIcon={<ExpandMore />}
-            defaultExpandIcon={<ChevronRight />}
-            expanded={expanded}
-            onNodeToggle={handleToggle}
-            sx={{ flexGrow: 1 }}
-          >
+          <List dense disablePadding>
             {sessions.map((session) => {
               const sessionFiles = filesBySession[session.id] || [];
-              const sessionNodeId = `session-${session.id}`;
-              const videoNodeId = `video-${session.id}`;
-              const codeGroupNodeId = `code-group-${session.id}`;
+              const isSessionExpanded = expandedSessions[session.id] || false;
+              const isCodeGroupExpanded = expandedCodeGroups[session.id] || false;
 
               return (
-                <TreeItem
-                  key={session.id}
-                  nodeId={sessionNodeId}
-                  label={
-                    open ? (
-                      <Box sx={{ display: 'flex', alignItems: 'center', py: 0.5 }}>
-                        <Typography variant="body2" fontWeight="medium">
-                          Day {session.session_number}: {session.topic}
-                        </Typography>
-                      </Box>
-                    ) : (
-                      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                <Box key={session.id}>
+                  {/* Session Header */}
+                  <ListItem disablePadding>
+                    <ListItemButton onClick={() => handleSessionToggle(session.id)}>
+                      <ListItemIcon sx={{ minWidth: 36 }}>
+                        {isSessionExpanded ? <ExpandMore /> : <ChevronRight />}
+                      </ListItemIcon>
+                      {open && (
+                        <ListItemText
+                          primary={
+                            <Typography variant="body2" fontWeight="bold">
+                              Day {session.session_number}: {session.topic}
+                            </Typography>
+                          }
+                        />
+                      )}
+                      {!open && (
                         <Typography variant="caption" fontWeight="bold">
                           {session.session_number}
                         </Typography>
-                      </Box>
-                    )
-                  }
-                >
-                  {/* Video Node */}
-                  {session.video_url && (
-                    <TreeItem
-                      nodeId={videoNodeId}
-                      label={
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            py: 0.5,
-                            cursor: 'pointer',
-                            '&:hover': { bgcolor: 'action.hover' }
-                          }}
-                          onClick={() => handleVideoClick(session)}
-                        >
-                          <PlayArrow sx={{ mr: 1, fontSize: 18, color: 'success.main' }} />
-                          {open && (
-                            <Typography variant="body2">Video Lecture</Typography>
-                          )}
-                        </Box>
-                      }
-                    />
-                  )}
+                      )}
+                    </ListItemButton>
+                  </ListItem>
 
-                  {/* Code Files Group */}
-                  {sessionFiles.length > 0 && (
-                    <TreeItem
-                      nodeId={codeGroupNodeId}
-                      label={
-                        <Box sx={{ display: 'flex', alignItems: 'center', py: 0.5 }}>
-                          <CodeIcon sx={{ mr: 1, fontSize: 18, color: 'primary.main' }} />
-                          {open && (
-                            <Typography variant="body2">Code Files</Typography>
-                          )}
-                        </Box>
-                      }
-                    >
-                      {sessionFiles.map((file) => (
-                        <TreeItem
-                          key={file.id}
-                          nodeId={`file-${file.id}`}
-                          label={
-                            <Box
-                              sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                py: 0.5,
-                                cursor: 'pointer',
-                                '&:hover': { bgcolor: 'action.hover' }
-                              }}
-                              onClick={() => handleFileClick(file, session)}
+                  {/* Session Content (when expanded) */}
+                  <Collapse in={isSessionExpanded} timeout="auto" unmountOnExit>
+                    <List component="div" disablePadding>
+                      {/* Video Item */}
+                      {session.video_url && (
+                        <ListItem disablePadding>
+                          <ListItemButton
+                            sx={{ pl: 4 }}
+                            onClick={() => handleVideoClick(session)}
+                          >
+                            <ListItemIcon sx={{ minWidth: 36 }}>
+                              <PlayArrow sx={{ fontSize: 20, color: 'success.main' }} />
+                            </ListItemIcon>
+                            {open && (
+                              <ListItemText
+                                primary={
+                                  <Typography variant="body2">
+                                    Video Lecture
+                                  </Typography>
+                                }
+                              />
+                            )}
+                          </ListItemButton>
+                        </ListItem>
+                      )}
+
+                      {/* Code Files Group */}
+                      {sessionFiles.length > 0 && (
+                        <>
+                          <ListItem disablePadding>
+                            <ListItemButton
+                              sx={{ pl: 4 }}
+                              onClick={() => handleCodeGroupToggle(session.id)}
                             >
-                              <InsertDriveFile sx={{ mr: 1, fontSize: 16, color: 'text.secondary' }} />
+                              <ListItemIcon sx={{ minWidth: 36 }}>
+                                {isCodeGroupExpanded ? <FolderOpen /> : <Folder />}
+                              </ListItemIcon>
                               {open && (
-                                <Typography variant="body2" noWrap>
-                                  {file.file_name}
-                                </Typography>
+                                <ListItemText
+                                  primary={
+                                    <Typography variant="body2">
+                                      Code Files ({sessionFiles.length})
+                                    </Typography>
+                                  }
+                                />
                               )}
-                            </Box>
-                          }
-                        />
-                      ))}
-                    </TreeItem>
-                  )}
-                </TreeItem>
+                            </ListItemButton>
+                          </ListItem>
+
+                          {/* Individual Files */}
+                          <Collapse in={isCodeGroupExpanded} timeout="auto" unmountOnExit>
+                            <List component="div" disablePadding>
+                              {sessionFiles.map((file) => (
+                                <ListItem key={file.id} disablePadding>
+                                  <ListItemButton
+                                    sx={{ pl: 8 }}
+                                    onClick={() => handleFileClick(file, session)}
+                                  >
+                                    <ListItemIcon sx={{ minWidth: 36 }}>
+                                      <InsertDriveFile sx={{ fontSize: 18 }} />
+                                    </ListItemIcon>
+                                    {open && (
+                                      <ListItemText
+                                        primary={
+                                          <Typography variant="body2" noWrap>
+                                            {file.file_name}
+                                          </Typography>
+                                        }
+                                      />
+                                    )}
+                                  </ListItemButton>
+                                </ListItem>
+                              ))}
+                            </List>
+                          </Collapse>
+                        </>
+                      )}
+                    </List>
+                  </Collapse>
+                </Box>
               );
             })}
-          </TreeView>
+          </List>
         )}
       </Box>
     </Box>
