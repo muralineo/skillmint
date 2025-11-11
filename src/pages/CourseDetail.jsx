@@ -207,32 +207,37 @@ export const CourseDetail = () => {
   }
 
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
-      <Button
-        startIcon={<ArrowBack />}
-        onClick={() => navigate('/')}
-        sx={{ mb: 3 }}
-      >
-        Back to Courses
-      </Button>
+    <Box sx={{ bgcolor: '#f5f5f5', minHeight: '100vh', pb: 4 }}>
+      {/* Header Section */}
+      <Container maxWidth="xl" sx={{ pt: 3, pb: 2 }}>
+        <Button
+          startIcon={<ArrowBack />}
+          onClick={() => navigate('/')}
+          sx={{ mb: 2 }}
+        >
+          Back to Courses
+        </Button>
+      </Container>
 
-      <Card>
-        <CardMedia
-          component="img"
-          height="400"
-          image={course.image_url || 'https://via.placeholder.com/600x400?text=Course'}
-          alt={course.title}
-        />
-        <Box sx={{ p: 4 }}>
+      {/* Course Info Section */}
+      <Container maxWidth="xl" sx={{ pb: 3 }}>
+        <Card elevation={2}>
+          <CardMedia
+            component="img"
+            height="250"
+            image={course.image_url || 'https://via.placeholder.com/600x400?text=Course'}
+            alt={course.title}
+          />
+          <Box sx={{ p: 3 }}>
           <Typography
-            variant="h3"
+            variant="h4"
             component="h1"
             gutterBottom
             sx={{ fontWeight: 'bold', color: '#2e7d32' }}
           >
             {course.title}
           </Typography>
-          <Typography variant="body1" paragraph sx={{ fontSize: '1.1rem', lineHeight: 1.8 }}>
+          <Typography variant="body1" paragraph sx={{ fontSize: '1rem', lineHeight: 1.6 }}>
             {course.description}
           </Typography>
 
@@ -241,8 +246,8 @@ export const CourseDetail = () => {
             <Paper
               elevation={3}
               sx={{
-                p: 3,
-                mt: 3,
+                p: 2,
+                mt: 2,
                 bgcolor: accessStatus?.status === 'pending' ? '#fff3e0' : accessStatus?.status === 'rejected' ? '#ffebee' : '#e3f2fd',
                 border: '2px solid',
                 borderColor: accessStatus?.status === 'pending' ? '#ff9800' : accessStatus?.status === 'rejected' ? '#f44336' : '#2196f3'
@@ -299,120 +304,118 @@ export const CourseDetail = () => {
             </Paper>
           )}
 
-          {/* Course Content - Only visible with access */}
-          {/* Replaced placeholder with actual course content sidebar and viewer */}
-          {accessStatus?.hasAccess && (
-            <Box sx={{ mt: 4 }}>
-              <Alert severity="success" sx={{ mb: 3 }}>
-                <Box display="flex" alignItems="center" gap={1}>
-                  <CheckCircle />
-                  <Typography>You have access to this course!</Typography>
-                </Box>
-              </Alert>
-              
-              {errorSessions && (
-                <Alert severity="error" sx={{ mb: 2 }}>
-                  Error loading content: {errorSessions}
-                </Alert>
-              )}
-
-              {/* Course Content Layout with Sidebar and Main Area */}
-              <Box
-                sx={{
-                  display: 'flex',
-                  gap: 0,
-                  height: '70vh',
-                  minHeight: 500,
-                  border: 1,
-                  borderColor: 'divider',
-                  borderRadius: 1,
-                  overflow: 'hidden',
-                  bgcolor: 'background.default'
-                }}
-              >
-                {/* Sidebar */}
-                <CourseContentSidebar
-                  open={sidebarOpen}
-                  onToggle={() => setSidebarOpen(prev => !prev)}
-                  sessions={sessions}
-                  filesBySession={filesBySession}
-                  onSelectVideo={handleSelectVideo}
-                  onSelectFile={handleSelectFile}
-                  loading={loadingSessions}
-                />
-
-                {/* Main Content Area */}
-                <Box
-                  sx={{
-                    flexGrow: 1,
-                    overflow: 'auto',
-                    bgcolor: 'background.paper',
-                    display: 'flex',
-                    flexDirection: 'column'
-                  }}
-                >
-                  {loadingSessions ? (
-                    <Box display="flex" justifyContent="center" alignItems="center" height="100%">
-                      <CircularProgress />
-                    </Box>
-                  ) : selectedView === 'video' ? (
-                    // Video View
-                    <Box p={4} display="flex" flexDirection="column" alignItems="center" justifyContent="center" height="100%">
-                      {sessions.find(s => s.id === selectedSessionId)?.video_url ? (
-                        <>
-                          <PlayCircleOutline sx={{ fontSize: 80, color: 'success.main', mb: 3 }} />
-                          <Typography variant="h5" gutterBottom fontWeight="bold">
-                            {sessions.find(s => s.id === selectedSessionId)?.topic}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary" mb={3}>
-                            Day {sessions.find(s => s.id === selectedSessionId)?.session_number}
-                          </Typography>
-                          <Button
-                            variant="contained"
-                            size="large"
-                            color="success"
-                            startIcon={<PlayCircleOutline />}
-                            component={MuiLink}
-                            href={sessions.find(s => s.id === selectedSessionId)?.video_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            sx={{ textTransform: 'none' }}
-                          >
-                            Watch Recording
-                          </Button>
-                        </>
-                      ) : (
-                        <Typography variant="body1" color="text.secondary">
-                          No video URL available for this session.
-                        </Typography>
-                      )}
-                    </Box>
-                  ) : selectedView === 'code' ? (
-                    // Monaco Editor View
-                    <MonacoEditorViewer
-                      openFiles={openFiles}
-                      activeFileId={activeFileId}
-                      onChangeContent={handleChangeFileContent}
-                      onActivate={handleActivateFile}
-                      onClose={handleCloseFile}
-                    />
-                  ) : (
-                    // Welcome / Empty State
-                    <Box p={4} display="flex" flexDirection="column" alignItems="center" justifyContent="center" height="100%">
-                      <Typography variant="h6" gutterBottom color="text.secondary">
-                        Welcome to {course.title}!
-                      </Typography>
-                      <Typography variant="body1" color="text.secondary" textAlign="center">
-                        Select a video lecture or code file from the sidebar to get started.
-                      </Typography>
-                    </Box>
-                  )}
-                </Box>
-              </Box>
-            </Box>
-          )}
         </Box>
       </Card>
     </Container>
+
+    {/* Course Content Section */}
+    {accessStatus?.hasAccess && (
+      <Container maxWidth="xl" sx={{ pb: 4 }}>
+        <Alert severity="success" sx={{ mb: 3 }}>
+          <Box display="flex" alignItems="center" gap={1}>
+            <CheckCircle />
+            <Typography>You have access to this course!</Typography>
+          </Box>
+        </Alert>
+        
+        {errorSessions && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            Error loading content: {errorSessions}
+          </Alert>
+        )}
+
+        {/* Editor Area with proper spacing */}
+        <Paper
+          elevation={3}
+          sx={{
+            height: 'calc(100vh - 450px)',
+            minHeight: 600,
+            display: 'flex',
+            overflow: 'hidden',
+            borderRadius: 2
+          }}
+        >
+        {/* Sidebar */}
+        <CourseContentSidebar
+          open={sidebarOpen}
+          onToggle={() => setSidebarOpen(prev => !prev)}
+          sessions={sessions}
+          filesBySession={filesBySession}
+          onSelectVideo={handleSelectVideo}
+          onSelectFile={handleSelectFile}
+          loading={loadingSessions}
+        />
+
+        {/* Main Content Area */}
+        <Box
+          sx={{
+            flexGrow: 1,
+            overflow: 'auto',
+            bgcolor: 'background.paper',
+            display: 'flex',
+            flexDirection: 'column'
+          }}
+        >
+          {loadingSessions ? (
+            <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+              <CircularProgress />
+            </Box>
+          ) : selectedView === 'video' ? (
+            // Video View
+            <Box p={4} display="flex" flexDirection="column" alignItems="center" justifyContent="center" height="100%">
+              {sessions.find(s => s.id === selectedSessionId)?.video_url ? (
+                <>
+                  <PlayCircleOutline sx={{ fontSize: 80, color: 'success.main', mb: 3 }} />
+                  <Typography variant="h5" gutterBottom fontWeight="bold">
+                    {sessions.find(s => s.id === selectedSessionId)?.topic}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" mb={3}>
+                    Day {sessions.find(s => s.id === selectedSessionId)?.session_number}
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    size="large"
+                    color="success"
+                    startIcon={<PlayCircleOutline />}
+                    component={MuiLink}
+                    href={sessions.find(s => s.id === selectedSessionId)?.video_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    sx={{ textTransform: 'none' }}
+                  >
+                    Watch Recording
+                  </Button>
+                </>
+              ) : (
+                <Typography variant="body1" color="text.secondary">
+                  No video URL available for this session.
+                </Typography>
+              )}
+            </Box>
+          ) : selectedView === 'code' ? (
+            // Monaco Editor View
+            <MonacoEditorViewer
+              openFiles={openFiles}
+              activeFileId={activeFileId}
+              onChangeContent={handleChangeFileContent}
+              onActivate={handleActivateFile}
+              onClose={handleCloseFile}
+            />
+          ) : (
+            // Welcome / Empty State
+            <Box p={4} display="flex" flexDirection="column" alignItems="center" justifyContent="center" height="100%">
+              <Typography variant="h6" gutterBottom color="text.secondary">
+                Welcome to {course.title}!
+              </Typography>
+              <Typography variant="body1" color="text.secondary" textAlign="center">
+                Select a video lecture or code file from the sidebar to get started.
+              </Typography>
+            </Box>
+          )}
+        </Box>
+      </Paper>
+    </Container>
+    )}
+    </Box>
   );
 };

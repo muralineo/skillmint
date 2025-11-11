@@ -60,8 +60,8 @@ export const CourseContentSidebar = ({
   return (
     <Box
       sx={{
-        width: open ? 280 : 60,
-        minWidth: open ? 280 : 60,
+        width: open ? 250 : 50,
+        minWidth: open ? 250 : 50,
         height: '100%',
         borderRight: 1,
         borderColor: 'divider',
